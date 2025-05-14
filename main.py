@@ -6,20 +6,19 @@ from PIL import Image
 import io
 import base64
 
-# Set page configuration
+
 st.set_page_config(page_title="Color Detection Tool", layout="centered")
 st.title("🎨 Color Detection Tool")
 st.markdown("Upload an image and click on it to detect the color at that point.")
 
-# Function to load color dataset
+
 @st.cache_data
 def load_color_data():
     try:
         colors_df = pd.read_csv('colors.csv')
-        colors_df.columns = colors_df.columns.str.strip()  # Clean column names
+        colors_df.columns = colors_df.columns.str.strip() 
         return colors_df
     except FileNotFoundError:
-        # Create a simple fallback color dataset if the CSV is not found
         data = {
             'color_name_full': [
                 'Black', 'White', 'Red', 'Lime', 'Blue', 'Yellow', 'Cyan', 'Magenta',
@@ -36,14 +35,11 @@ def load_color_data():
         }
         return pd.DataFrame(data)
 
-# Load the color dataset
 colors_df = load_color_data()
 
-# Function to calculate the Euclidean distance between two RGB values
 def calculate_color_distance(rgb1, rgb2):
     return np.sqrt(sum((a - b) ** 2 for a, b in zip(rgb1, rgb2)))
 
-# Function to get the closest matching color name
 def get_closest_color(rgb):
     min_distance = float('inf')
     closest_color_name = ""
@@ -59,40 +55,32 @@ def get_closest_color(rgb):
     
     return closest_color_name, closest_hex
 
-# File uploader
+
 uploaded_image = st.file_uploader("Choose an image", type=['png', 'jpg', 'jpeg'])
 
 if uploaded_image:
-    # Read image using OpenCV
     file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
     image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-    
-    # Convert BGR to RGB
+ 
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     h, w, _ = image_rgb.shape
-    
-    # Display image
+
     st.image(image_rgb, caption="Uploaded Image", use_container_width=True)
-    
-    # Create a clickable area over the image
+   
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        # Store image in session state to avoid reloading
         if 'image_rgb' not in st.session_state:
             st.session_state.image_rgb = image_rgb
-        
-        # Create a container for color information
+
         color_info = st.empty()
         
-        # Handle click events on the image
+   
         clicked = st.button("Click on the image to detect color")
         
         if clicked:
-            # Show instruction
             st.info("After clicking this button, your next click on the image will detect the color at that position.")
-            
-            # Wait for mouse coordinates
+
             st.markdown("""
             <style>
             canvas {
@@ -101,14 +89,13 @@ if uploaded_image:
             </style>
             """, unsafe_allow_html=True)
             
-            # Get coordinates for detection (simplified approach)
+     
             cols = st.columns(2)
             with cols[0]:
                 x = st.number_input("X coordinate", min_value=0, max_value=w-1, value=w//2)
             with cols[1]:
                 y = st.number_input("Y coordinate", min_value=0, max_value=h-1, value=h//2)
-            
-            # Get pixel color
+    
             if 0 <= x < w and 0 <= y < h:
                 rgb = image_rgb[y, x]
                 r, g, b = rgb[0], rgb[1], rgb[2]
@@ -126,8 +113,7 @@ if uploaded_image:
                     )
             else:
                 st.warning("Coordinates outside image bounds.")
-    
-    # Alternative approach: Allow direct input of image coordinates
+
     st.markdown("### 📊 Direct Coordinate Input")
     st.write("You can also input specific coordinates to check the color:")
     
